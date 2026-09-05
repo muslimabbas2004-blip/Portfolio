@@ -1,0 +1,24 @@
+{
+  "name": "muslim-abbas-portfolio",
+  "version": "1.0.0",
+  "description": "Professional Supply Chain & Procurement Portfolio of Muslim Abbas",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  },
+  "keywords": [
+    "supply-chain",
+    "procurement",
+    "portfolio",
+    "dynamics-365",
+    "sap",
+    "logistics"
+  ],
+  "author": "Muslim Abbas",
+  "license": "MIT"
+}

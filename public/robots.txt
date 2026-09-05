@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://muslimabbas.netlify.app/sitemap.xml
