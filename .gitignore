@@ -32,8 +32,8 @@ dist-ssr
 *.sw?
 Thumbs.db
 
-# Netlify
-.netlify
+# Railway
+.railway
 
 # Scratch & Temporary files
 scratch/

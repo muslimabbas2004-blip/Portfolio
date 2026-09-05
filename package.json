@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "muslim-abbas-portfolio",
   "version": "1.0.0",
   "description": "Professional Supply Chain & Procurement Portfolio of Muslim Abbas",
@@ -6,10 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "helmet": "^8.0.0",
+    "nodemailer": "^6.9.9"
   },
   "devDependencies": {
     "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": [
     "supply-chain",
