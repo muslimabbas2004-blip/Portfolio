@@ -1,76 +1,11 @@
-/**
- * server.js - Production server for Railway deployment
- *
- * Serves the Vite-built static portfolio and handles the contact form API.
- * Listens on process.env.PORT (set automatically by Railway).
- */
-
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
 import nodemailer from "nodemailer";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export default async function handler(req, res) {
+  // Only allow POST
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed." });
+  }
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-  })
-);
-
-// CORS
-const allowedOrigins = [
-  process.env.SITE_URL,
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:4173",
-].filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error("CORS: origin " + origin + " not allowed"));
-    },
-    methods: ["GET", "POST"],
-    credentials: false,
-  })
-);
-
-// Body parsing
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: false, limit: "10kb" }));
-
-// Static files - serve Vite build output
-const DIST = path.join(__dirname, "dist");
-app.use(
-  express.static(DIST, {
-    setHeaders(res, filePath) {
-      if (filePath.includes("/assets/")) {
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      } else {
-        res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
-      }
-    },
-  })
-);
-
-// Health check
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// Contact form API
-app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message } = req.body || {};
   const botField = req.body ? req.body["bot-field"] : undefined;
 
@@ -112,7 +47,7 @@ app.post("/api/contact", async (req, res) => {
     "[Contact] From: " + nameTrimmed + " <" + emailTrimmed + "> | Subject: " + subjectTrimmed + " | " + new Date().toISOString()
   );
 
-  // Email sending (if SMTP is configured)
+  // Send email via Gmail SMTP
   const smtpConfigured =
     process.env.SMTP_HOST &&
     process.env.SMTP_USER &&
@@ -152,34 +87,14 @@ app.post("/api/contact", async (req, res) => {
       console.log("[Contact] Email sent to " + process.env.CONTACT_EMAIL_TO);
     } catch (emailErr) {
       console.error("[Contact] Email send error:", emailErr.message);
+      // Still return success to user — don't expose internal errors
     }
   } else {
-    console.log(
-      "[Contact] SMTP not configured. Submission logged above. Set SMTP_HOST, SMTP_USER, SMTP_PASS, CONTACT_EMAIL_TO to enable email."
-    );
+    console.log("[Contact] SMTP not configured. Submission logged only.");
   }
 
   return res.status(200).json({
     success: true,
     message: "Thanks for reaching out. I will get back to you soon.",
   });
-});
-
-// SPA fallback - return index.html for all unmatched routes
-app.get("/{*splat}", (_req, res) => {
-  res.sendFile(path.join(DIST, "index.html"));
-});
-
-// Error handler
-app.use((err, _req, res, _next) => {
-  console.error("[Server Error]", err.message);
-  res.status(500).json({ error: "Internal Server Error" });
-});
-
-// Start server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on http://0.0.0.0:" + PORT);
-  console.log("Environment: " + (process.env.NODE_ENV || "development"));
-  console.log("SMTP configured: " + !!(process.env.SMTP_HOST && process.env.SMTP_USER));
-});
-
+}
