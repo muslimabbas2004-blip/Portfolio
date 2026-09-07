@@ -383,8 +383,10 @@
 
   /* ---------- Projects ---------- */
   .projects{ background: var(--bg-alt); }
-  .project-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:44px; }
-  @media (max-width:820px){ .project-grid{ grid-template-columns:1fr; } }
+
+  /* Single authoritative project-grid rule — stacked layout, both cards full-width */
+  .project-grid{ display:grid; grid-template-columns:1fr; gap:24px; margin-top:44px; }
+
   .project-card{
     background:#fff; border:1px solid var(--line); border-radius: var(--radius); padding:28px;
     transition: border-color var(--transition);
@@ -399,11 +401,7 @@
   .sdg{ font-size:0.78rem; font-weight:600; color:#fff; background: var(--navy); border-radius: var(--radius); padding:4px 9px; }
 
   /* ---------- Featured project card ---------- */
-  .project-grid{ display:grid; grid-template-columns:1fr; gap:24px; margin-top:44px; }
-  .project-grid .project-card:not(.project-card--featured){ max-width:none; }
-
   .project-card--featured{
-    grid-column: 1 / -1;
     background:#fff; border:1px solid var(--line); border-radius:20px;
     padding:36px;
     box-shadow: 0 1px 2px rgba(11,24,38,0.04);
@@ -411,14 +409,15 @@
   }
   .project-card--featured:hover{ border-color: var(--accent); box-shadow: 0 16px 32px rgba(11,24,38,0.08); }
   .pc-eyebrow{ font-size:0.78rem; font-weight:600; letter-spacing:0.03em; color: var(--accent); }
-  .pc-title{ margin-top:10px; font-size:1.55rem; line-height:1.28; max-width:26ch; }
+  .pc-title{ margin-top:10px; font-size:1.55rem; line-height:1.28; }
   .pc-subtitle{ margin-top:8px; font-size:0.98rem; color: var(--navy); font-weight:600; }
-  .pc-desc{ margin-top:14px; font-size:0.97rem; color: var(--ink); max-width:62ch; }
+  .pc-desc{ margin-top:14px; font-size:0.97rem; color: var(--ink); }
 
+  /* Supply chain flow diagram */
   .pc-flow{
     margin-top:28px; display:flex; align-items:center; gap:0;
     padding:20px 18px; background: var(--bg-alt); border-radius:14px; border:1px solid var(--line);
-    overflow-x:auto;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
   .pc-node{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:none; width:118px; text-align:center; }
   .pc-node .dot{
@@ -434,22 +433,63 @@
     50%{ box-shadow: 0 0 0 5px rgba(176,124,51,0); }
   }
   .pc-node span{ font-size:0.76rem; font-weight:600; color: var(--navy-deep); }
-  .pc-line{ flex:1; min-width:28px; height:1px; background: var(--line); position:relative; top:-14px; }
+  .pc-line{ flex:1; min-width:20px; height:1px; background: var(--line); position:relative; top:-14px; }
   @media (prefers-reduced-motion: reduce){ .pc-node .dot{ animation:none; } }
-  @media (max-width:640px){ .pc-node{ width:92px; } .pc-node span{ font-size:0.7rem; } }
 
+  /* Tablet: shrink nodes */
+  @media (max-width:860px){ .pc-node{ width:96px; } .pc-node span{ font-size:0.72rem; } }
+
+  /* Mobile: convert flow to vertical stacked list — no overflow */
+  @media (max-width:600px){
+    .pc-flow{
+      flex-direction:column; align-items:stretch; gap:0;
+      padding:16px 14px; overflow-x:visible;
+    }
+    .pc-node{ flex-direction:row; width:100%; gap:12px; align-items:center; text-align:left; padding:10px 0; }
+    .pc-node .dot{ flex:none; width:10px; height:10px; }
+    .pc-node span{ font-size:0.88rem; }
+    .pc-line{ width:1px; height:20px; min-width:0; min-height:20px; top:0; align-self:flex-start; margin-left:4px; flex:none; }
+  }
+
+  /* Footer: tags + CTA button */
   .pc-footer{ margin-top:26px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; }
-  .pc-tags{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pc-tags{ display:flex; flex-wrap:wrap; gap:8px; flex:1; }
   .tag--pill{ border-radius:20px; background:#fff; }
   .pc-cta{
     background: var(--navy); color:#fff; border:1px solid var(--navy); cursor:pointer;
-    padding:12px 22px; border-radius: var(--radius); font-weight:600; font-size:0.92rem;
-    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 22px; border-radius:8px; font-weight:600; font-size:0.92rem;
+    display:inline-flex; align-items:center; gap:8px; flex:none;
     transition: background var(--transition), transform var(--transition);
   }
   .pc-cta:hover{ background: var(--navy-deep); transform: translateY(-2px); }
   .pc-cta svg{ width:15px; height:15px; transition: transform var(--transition); }
   .pc-cta:hover svg{ transform: translateX(3px); }
+
+  /* Tablet: button goes full width below tags */
+  @media (max-width:640px){
+    .pc-footer{ flex-direction:column; align-items:stretch; gap:14px; }
+    .pc-tags{ flex:unset; }
+    .pc-cta{ width:100%; justify-content:center; }
+  }
+
+  /* Industry 4.0 network widget */
+  .i4-network{
+    margin-top:28px; padding:22px 20px;
+    background: var(--bg-alt); border-radius:14px; border:1px solid var(--line);
+  }
+  .i4-net-row{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+  .i4-net-node{
+    font-size:0.78rem; font-weight:600; color: var(--navy-deep);
+    background:#fff; border:1px solid var(--line); border-radius:20px; padding:7px 15px;
+  }
+  .i4-net-tick{ width:1px; height:14px; background: var(--line); margin:4px auto; }
+
+  /* Mobile: tighten node sizes and padding */
+  @media (max-width:480px){
+    .i4-network{ padding:16px 14px; }
+    .i4-net-row{ gap:8px; }
+    .i4-net-node{ font-size:0.75rem; padding:6px 12px; }
+  }
 
   /* ---------- Case study modal ---------- */
   .cs-modal{
@@ -872,11 +912,6 @@
     .project-card--featured { padding: 22px; border-radius: 14px; }
     .pc-title { font-size: 1.25rem; }
     .pc-desc { font-size: 0.9rem; }
-    .pc-footer { flex-direction: column; align-items: flex-start; }
-    .pc-cta { width: 100%; justify-content: center; }
-    .pc-flow { padding: 14px 10px; gap: 0; }
-    .pc-node { width: 76px; }
-    .pc-node span { font-size: 0.65rem; }
   }
 
   /* --- Certifications --- */
