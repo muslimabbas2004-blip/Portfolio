@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "muslim-abbas-portfolio",
   "version": "1.0.0",
   "description": "Professional Supply Chain & Procurement Portfolio of Muslim Abbas",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.0.0",
     "nodemailer": "^6.9.9"
