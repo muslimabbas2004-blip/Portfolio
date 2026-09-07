@@ -38,15 +38,25 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "Validation failed.", fields: errors });
   }
 
+  // Log env var presence (never log values)
+  const envStatus = {
+    SMTP_HOST: !!process.env.SMTP_HOST,
+    SMTP_USER: !!process.env.SMTP_USER,
+    SMTP_PASS: !!process.env.SMTP_PASS,
+    CONTACT_EMAIL_TO: !!process.env.CONTACT_EMAIL_TO,
+  };
+  console.log("[Contact] ENV status:", JSON.stringify(envStatus));
   console.log("[Contact] From:", nameTrimmed, "<" + emailTrimmed + "> | Subject:", subjectTrimmed);
 
-  const smtpConfigured =
-    process.env.SMTP_HOST && process.env.SMTP_USER &&
-    process.env.SMTP_PASS && process.env.CONTACT_EMAIL_TO;
+  const smtpConfigured = envStatus.SMTP_HOST && envStatus.SMTP_USER && envStatus.SMTP_PASS && envStatus.CONTACT_EMAIL_TO;
 
   if (!smtpConfigured) {
-    console.error("[Contact] SMTP env vars missing — check Vercel environment variables");
-    return res.status(200).json({ success: true, message: "Thanks for reaching out. I will get back to you soon." });
+    console.error("[Contact] SMTP env vars missing");
+    // Return the env status so we can debug from the browser
+    return res.status(500).json({
+      error: "SMTP not configured on server.",
+      debug: envStatus,
+    });
   }
 
   try {
@@ -74,9 +84,15 @@ module.exports = async function handler(req, res) {
     });
 
     console.log("[Contact] Email sent to", process.env.CONTACT_EMAIL_TO);
+    return res.status(200).json({ success: true, message: "Thanks for reaching out. I will get back to you soon." });
+
   } catch (err) {
     console.error("[Contact] Email error:", err.message, err.code || "");
+    // Return the actual error so we can diagnose from browser
+    return res.status(500).json({
+      error: "Email send failed.",
+      detail: err.message,
+      code: err.code || null,
+    });
   }
-
-  return res.status(200).json({ success: true, message: "Thanks for reaching out. I will get back to you soon." });
 };
