@@ -80,7 +80,7 @@
     box-shadow: 0 2px 8px rgba(20,40,63,0.1);
   }
   .cta-btn:hover{ background: var(--navy-deep); border-color:var(--navy-deep); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(20,40,63,0.25); }
-  .nav-cta{ display:flex; align-items:center; }
+  .nav-links a.cta-btn{ color:#fff !important; border-bottom:none; }
   .menu-toggle{
     display:none; background:none; border:none; cursor:pointer; padding:8px;
   }
