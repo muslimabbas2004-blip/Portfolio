@@ -1,4 +1,51 @@
-const nodemailer = require("nodemailer");
+const { GoogleAuth } = require("google-auth-library");
+
+const SPREADSHEET_ID = "1SjNiu02p4sx-UPcOjez5uZaZOwK1q2F6Pi4DoX9reL0";
+const SHEET_NAME = "Sheet1";
+
+async function appendToSheet(row) {
+  const credentials = {
+    type: "service_account",
+    project_id: process.env.GOOGLE_PROJECT_ID,
+    private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT_URL,
+    universe_domain: "googleapis.com",
+  };
+
+  const auth = new GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  const client = await auth.getClient();
+  const token = await client.getAccessToken();
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      values: [row],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Sheets API error ${response.status}: ${text}`);
+  }
+
+  return await response.json();
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -17,10 +64,12 @@ module.exports = async function handler(req, res) {
   const { name, email, subject, message } = body;
   const botField = body["bot-field"];
 
+  // Honeypot
   if (botField && String(botField).trim().length > 0) {
     return res.status(200).json({ success: true, message: "Message received." });
   }
 
+  // Validation
   const errors = {};
   const nameTrimmed = (name || "").trim();
   if (!nameTrimmed || nameTrimmed.length < 2) errors.name = "Please enter a valid name.";
@@ -38,61 +87,16 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "Validation failed.", fields: errors });
   }
 
-  // Log env var presence (never log values)
-  const envStatus = {
-    SMTP_HOST: !!process.env.SMTP_HOST,
-    SMTP_USER: !!process.env.SMTP_USER,
-    SMTP_PASS: !!process.env.SMTP_PASS,
-    CONTACT_EMAIL_TO: !!process.env.CONTACT_EMAIL_TO,
-  };
-  console.log("[Contact] ENV status:", JSON.stringify(envStatus));
+  const timestamp = new Date().toLocaleString("en-PK", { timeZone: "Asia/Karachi" });
+
   console.log("[Contact] From:", nameTrimmed, "<" + emailTrimmed + "> | Subject:", subjectTrimmed);
 
-  const smtpConfigured = envStatus.SMTP_HOST && envStatus.SMTP_USER && envStatus.SMTP_PASS && envStatus.CONTACT_EMAIL_TO;
-
-  if (!smtpConfigured) {
-    console.error("[Contact] SMTP env vars missing");
-    // Return the env status so we can debug from the browser
-    return res.status(500).json({
-      error: "SMTP not configured on server.",
-      debug: envStatus,
-    });
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587", 10),
-      secure: false,
-      requireTLS: true,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      tls: { rejectUnauthorized: false },
-    });
-
-    await transporter.sendMail({
-      from: '"Portfolio Contact" <' + process.env.SMTP_USER + ">",
-      replyTo: '"' + nameTrimmed + '" <' + emailTrimmed + ">",
-      to: process.env.CONTACT_EMAIL_TO,
-      subject: "[Portfolio Contact] " + subjectTrimmed,
-      text: "Name: " + nameTrimmed + "\nEmail: " + emailTrimmed + "\nSubject: " + subjectTrimmed + "\n\n" + messageTrimmed,
-      html:
-        "<h2>New Portfolio Contact Submission</h2>" +
-        "<p><strong>Name:</strong> " + nameTrimmed + "</p>" +
-        "<p><strong>Email:</strong> <a href='mailto:" + emailTrimmed + "'>" + emailTrimmed + "</a></p>" +
-        "<p><strong>Subject:</strong> " + subjectTrimmed + "</p>" +
-        "<hr><p>" + messageTrimmed.replace(/\n/g, "<br>") + "</p>",
-    });
-
-    console.log("[Contact] Email sent to", process.env.CONTACT_EMAIL_TO);
+    await appendToSheet([timestamp, nameTrimmed, emailTrimmed, subjectTrimmed, messageTrimmed]);
+    console.log("[Contact] Row appended to Google Sheet");
     return res.status(200).json({ success: true, message: "Thanks for reaching out. I will get back to you soon." });
-
   } catch (err) {
-    console.error("[Contact] Email error:", err.message, err.code || "");
-    // Return the actual error so we can diagnose from browser
-    return res.status(500).json({
-      error: "Email send failed.",
-      detail: err.message,
-      code: err.code || null,
-    });
+    console.error("[Contact] Sheets error:", err.message);
+    return res.status(500).json({ error: "Failed to save message.", detail: err.message });
   }
 };
